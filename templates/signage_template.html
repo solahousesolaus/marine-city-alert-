@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>뉴제니스마린 부동산 - 디지털 사이니지</title>
+<meta name="viewport" content="width=1920, initial-scale=1">
+<!-- 5분마다 자동 새로고침 -->
+<meta http-equiv="refresh" content="300">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    background: #0A142D;
+    color: #F5EEDC;
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    cursor: none;
+  }
+
+  :root {
+    --navy-dark: #0A142D;
+    --navy: #12203E;
+    --navy-light: #1E3054;
+    --navy-card: #16244A;
+    --gold: #C9A961;
+    --gold-bright: #D4AF37;
+    --cream: #F5EEDC;
+    --white: #FFFFFF;
+    --gray: #B4BED2;
+    --subtle: #6E7D94;
+    --red: #DC4646;
+    --red-soft: #B43C3C;
+    --green: #4CAF78;
+    --orange: #F5A06A;
+  }
+
+  .stage { width: 100vw; height: 100vh; position: relative; }
+
+  /* 상단바 */
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0; height: 80px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 50px;
+    background: linear-gradient(180deg, rgba(10,20,45,0.95), rgba(10,20,45,0.7));
+    z-index: 10;
+    border-bottom: 1px solid rgba(212,175,55,0.2);
+  }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand-mark { width: 14px; height: 14px; background: var(--gold-bright); transform: rotate(45deg); }
+  .brand-name { font-size: 28px; font-weight: 900; color: var(--cream); letter-spacing: 0.5px; }
+  .brand-name .accent { color: var(--gold-bright); }
+  .brand-sub { font-size: 14px; font-weight: 500; color: var(--gold); margin-left: 8px; letter-spacing: 2px; }
+  .topbar-right { display: flex; align-items: center; gap: 30px; }
+  .clock { font-size: 22px; font-weight: 700; color: var(--cream); font-variant-numeric: tabular-nums; }
+  .live-dot {
+    display: inline-block; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--red); margin-right: 8px;
+    animation: pulse 1.5s infinite; vertical-align: middle;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .live { font-size: 14px; font-weight: 700; color: var(--red); letter-spacing: 1.5px; }
+  .data-stamp {
+    font-size: 13px; color: var(--gray); margin-left: 20px; font-weight: 500;
+  }
+
+  /* 티커 */
+  .ticker {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 70px;
+    background: linear-gradient(90deg, rgba(212,175,55,0.15), rgba(10,20,45,0.95) 50%, rgba(212,175,55,0.15));
+    border-top: 2px solid var(--gold);
+    display: flex; align-items: center; overflow: hidden; z-index: 10;
+  }
+  .ticker-label {
+    flex-shrink: 0; background: var(--gold); color: var(--navy-dark);
+    padding: 12px 28px; font-size: 18px; font-weight: 900;
+    letter-spacing: 1.5px; height: 100%;
+    display: flex; align-items: center;
+  }
+  .ticker-track { flex: 1; overflow: hidden; position: relative; height: 100%; }
+  .ticker-content {
+    display: inline-flex; white-space: nowrap;
+    animation: ticker-scroll 80s linear infinite;
+    align-items: center; height: 100%; padding-left: 100%;
+  }
+  @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .ticker-item {
+    display: inline-flex; align-items: center; gap: 16px;
+    font-size: 22px; font-weight: 600; color: var(--cream); margin-right: 60px;
+  }
+  .ticker-item .apt { color: var(--gold-bright); font-weight: 700; }
+  .ticker-item .price { color: var(--white); font-weight: 800; }
+  .ticker-item .up { color: var(--red); font-weight: 800; }
+  .ticker-item .down { color: var(--green); font-weight: 800; }
+  .ticker-sep { color: var(--gold); font-size: 18px; margin: 0 30px; }
+
+  /* 페이지 인디케이터 */
+  .page-dots {
+    position: absolute; bottom: 90px; right: 50px;
+    display: flex; gap: 12px; z-index: 10;
+  }
+  .page-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(212,175,55,0.3); transition: all 0.3s; }
+  .page-dot.active { background: var(--gold-bright); transform: scale(1.3); box-shadow: 0 0 12px var(--gold-bright); }
+
+  /* 페이지 */
+  .pages { position: absolute; top: 80px; bottom: 70px; left: 0; right: 0; overflow: hidden; }
+  .page {
+    position: absolute; inset: 0;
+    padding: 50px 60px;
+    opacity: 0; transform: translateX(50px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    pointer-events: none;
+  }
+  .page.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+
+  .page-header { margin-bottom: 30px; }
+  .page-eyebrow {
+    font-size: 16px; font-weight: 700; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 10px;
+  }
+  .page-title { font-size: 56px; font-weight: 900; color: var(--white); line-height: 1.1; }
+  .page-title .accent { color: var(--gold-bright); }
+  .page-sub { font-size: 22px; font-weight: 500; color: var(--cream); margin-top: 12px; letter-spacing: 0.5px; }
+
+  /* Page 1: 어제 거래 */
+  .deals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; margin-top: 20px; }
+  .deal-card {
+    background: var(--navy-card); border: 2px solid var(--gold);
+    border-radius: 18px; padding: 30px 36px;
+    position: relative; overflow: hidden;
+  }
+  .deal-card.highlight {
+    border: 3px solid var(--gold-bright);
+    background: linear-gradient(135deg, var(--navy-card), rgba(212,175,55,0.1));
+    box-shadow: 0 0 40px rgba(212,175,55,0.3);
+  }
+  .deal-card.highlight::before {
+    content: '🎯 신고가'; position: absolute; top: 0; right: 0;
+    background: var(--red); color: var(--white);
+    padding: 8px 24px; font-size: 16px; font-weight: 900;
+    letter-spacing: 1px; border-bottom-left-radius: 16px;
+  }
+  .deal-row1 { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .deal-apt { font-size: 32px; font-weight: 800; color: var(--white); letter-spacing: -0.5px; }
+  .deal-apt .star { color: var(--gold-bright); margin-right: 8px; }
+  .deal-info { font-size: 18px; font-weight: 500; color: var(--gray); }
+  .deal-row2 { display: flex; align-items: baseline; justify-content: space-between; margin: 16px 0; }
+  .deal-price { font-size: 56px; font-weight: 900; color: var(--gold-bright); letter-spacing: -1px; line-height: 1; }
+  .deal-pp { font-size: 18px; font-weight: 600; color: var(--cream); }
+  .deal-row3 { font-size: 18px; font-weight: 500; color: var(--cream); padding-top: 12px; border-top: 1px solid rgba(212,175,55,0.2); }
+  .deal-row3 .change-up { color: var(--red); font-weight: 800; }
+  .deal-row3 .change-down { color: var(--green); font-weight: 800; }
+  .deal-row3 .change-flat { color: var(--gold); font-weight: 600; }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 70%; gap: 30px;
+  }
+  .empty-icon { font-size: 100px; opacity: 0.4; }
+  .empty-text { font-size: 36px; font-weight: 700; color: var(--cream); text-align: center; }
+  .empty-sub { font-size: 22px; color: var(--gray); }
+
+  /* Page 2: 주간 시세 */
+  .week-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px; margin-top: 20px; }
+  .week-table-card { background: var(--navy-card); border: 2px solid var(--gold); border-radius: 18px; padding: 30px; }
+  .card-title {
+    font-size: 24px; font-weight: 800; color: var(--gold-bright);
+    margin-bottom: 20px; padding-bottom: 14px;
+    border-bottom: 2px solid rgba(212,175,55,0.3);
+  }
+  .week-table { width: 100%; border-collapse: collapse; }
+  .week-table th {
+    text-align: left; padding: 14px 8px; font-size: 16px;
+    color: var(--gold); font-weight: 700;
+    border-bottom: 1px solid rgba(212,175,55,0.2);
+  }
+  .week-table td {
+    padding: 16px 8px; font-size: 20px; color: var(--cream);
+    border-bottom: 1px solid rgba(110,125,148,0.2);
+  }
+  .week-table td.apt { color: var(--white); font-weight: 700; }
+  .week-table td.price { color: var(--gold-bright); font-weight: 800; font-size: 22px; }
+  .week-table td.up { color: var(--red); font-weight: 800; }
+  .week-table td.down { color: var(--green); font-weight: 800; }
+  .week-table td.flat { color: var(--gold); font-weight: 600; }
+
+  .stats-card {
+    background: var(--navy-card); border: 2px solid var(--gold); border-radius: 18px;
+    padding: 30px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .stat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 0; border-bottom: 1px solid rgba(110,125,148,0.2);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 18px; color: var(--gray); font-weight: 500; }
+  .stat-value {
+    font-size: 36px; color: var(--gold-bright); font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-value .small { font-size: 18px; color: var(--cream); font-weight: 500; margin-left: 6px; }
+
+  /* Page 3: 뉴스 */
+  .news-list { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+  .news-item {
+    background: var(--navy-card); border-left: 6px solid var(--gold);
+    border-radius: 12px; padding: 24px 32px;
+    display: flex; align-items: center; gap: 30px;
+  }
+  .news-item.hot { border-left-color: var(--red); }
+  .news-tag {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 18px;
+    font-size: 14px; font-weight: 800; letter-spacing: 1px;
+  }
+  .news-tag.policy { background: var(--gold-bright); color: var(--navy-dark); }
+  .news-tag.market { background: var(--green); color: var(--white); }
+  .news-tag.hot { background: var(--red); color: var(--white); }
+  .news-tag.local { background: rgba(212,175,55,0.25); color: var(--gold-bright); border: 1px solid var(--gold); }
+  .news-headline { flex: 1; font-size: 26px; font-weight: 700; color: var(--white); line-height: 1.4; }
+  .news-date { flex-shrink: 0; font-size: 16px; color: var(--gray); font-weight: 500; }
+
+  /* Page 4: QR + CTA */
+  .cta-page { height: 100%; display: grid; grid-template-columns: 1.3fr 1fr; gap: 60px; align-items: center; }
+  .cta-left { padding: 40px 0; }
+  .cta-eyebrow { font-size: 22px; color: var(--gold); font-weight: 700; letter-spacing: 4px; margin-bottom: 24px; }
+  .cta-title { font-size: 76px; font-weight: 900; color: var(--white); line-height: 1.1; margin-bottom: 30px; }
+  .cta-title .accent { color: var(--gold-bright); }
+  .cta-desc { font-size: 26px; color: var(--cream); line-height: 1.6; margin-bottom: 40px; font-weight: 400; }
+  .cta-features { display: flex; flex-direction: column; gap: 16px; }
+  .cta-feature { display: flex; align-items: center; gap: 16px; font-size: 24px; color: var(--cream); font-weight: 500; }
+  .cta-feature .check {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold-bright); color: var(--navy-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 900; flex-shrink: 0;
+  }
+  .cta-right { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; }
+  .qr-frame {
+    background: var(--white); padding: 24px; border-radius: 24px;
+    box-shadow: 0 0 60px rgba(212,175,55,0.3); position: relative;
+  }
+  .qr-img { width: 320px; height: 320px; display: block; }
+  .qr-caption { font-size: 28px; color: var(--gold-bright); font-weight: 800; letter-spacing: 1px; text-align: center; }
+  .qr-sub { font-size: 18px; color: var(--cream); text-align: center; margin-top: -16px; }
+  .countdown { margin-top: 16px; font-size: 16px; color: var(--gold); text-align: center; letter-spacing: 2px; }
+  .countdown-bar {
+    width: 320px; height: 6px; background: rgba(212,175,55,0.2);
+    border-radius: 3px; margin: 12px auto 0; overflow: hidden;
+  }
+  .countdown-fill { height: 100%; background: linear-gradient(90deg, var(--gold-bright), var(--gold)); transition: width 0.1s linear; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- 상단 브랜드 바 -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <span class="brand-name">뉴제니스마린 <span class="accent">부동산</span></span>
+        <span class="brand-sub">HAEUNDAE · MARINE CITY</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div><span class="live-dot"></span><span class="live">LIVE</span></div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="data-stamp">데이터 갱신: {{ data_updated }}</div>
+    </div>
+  </div>
+
+  <!-- 페이지 인디케이터 -->
+  <div class="page-dots">
+    <div class="page-dot active"></div>
+    <div class="page-dot"></div>
+    <div class="page-dot"></div>
+    <div class="page-dot"></div>
+  </div>
+
+  <!-- 페이지 컨테이너 -->
+  <div class="pages">
+
+    <!-- Page 1: 어제 거래 -->
+    <div class="page active" id="page1">
+      <div class="page-header">
+        <div class="page-eyebrow">YESTERDAY · 최근 신고된 우동 거래</div>
+        <h1 class="page-title">{{ page1_title }}</h1>
+        <div class="page-sub">{{ page1_sub }}</div>
+      </div>
+
+      {% if recent_deals %}
+      <div class="deals-grid">
+        {% for deal in recent_deals %}
+        <div class="deal-card{% if deal.highlight %} highlight{% endif %}">
+          <div class="deal-row1">
+            <div class="deal-apt">{% if deal.is_marine %}<span class="star">⭐</span>{% endif %}{{ deal.apt }}</div>
+            <div class="deal-info">{{ deal.info }}</div>
+          </div>
+          <div class="deal-row2">
+            <div class="deal-price">{{ deal.price }}</div>
+            <div class="deal-pp">{{ deal.pp }}</div>
+          </div>
+          <div class="deal-row3">
+            {{ deal.change_html | safe }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🌊</div>
+        <div class="empty-text">오늘은 신규 우동 거래가<br>아직 신고되지 않았습니다</div>
+        <div class="empty-sub">실거래 신고 기한은 계약일로부터 30일 · 매일 7시 자동 갱신</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Page 2: 주간 시세 -->
+    <div class="page" id="page2">
+      <div class="page-header">
+        <div class="page-eyebrow">WEEKLY · 한 주 시세 흐름</div>
+        <h1 class="page-title">우동 <span class="accent">한 주간 시세</span></h1>
+        <div class="page-sub">{{ week_range }} · 마린시티 인근 거래 동향</div>
+      </div>
+
+      <div class="week-grid">
+        <div class="week-table-card">
+          <div class="card-title">⭐ 마린시티 단지 평균</div>
+          <table class="week-table">
+            <thead>
+              <tr><th>단지</th><th>평형</th><th>평균가</th><th>주간 변동</th></tr>
+            </thead>
+            <tbody>
+              {% for row in week_table %}
+              <tr>
+                <td class="apt">{{ row.apt }}</td>
+                <td>{{ row.size }}</td>
+                <td class="price">{{ row.price }}</td>
+                <td class="{{ row.change_class }}">{{ row.change }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="stats-card">
+          <div class="card-title">📊 주간 통계</div>
+          {% for stat in week_stats %}
+          <div class="stat-row">
+            <div class="stat-label">{{ stat.label }}</div>
+            <div class="stat-value">{{ stat.value }}<span class="small">{{ stat.unit }}</span></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 3: 뉴스 -->
+    <div class="page" id="page3">
+      <div class="page-header">
+        <div class="page-eyebrow">NEWS · 한 주 핵심 소식</div>
+        <h1 class="page-title">해운대 · 마린시티 <span class="accent">이슈</span></h1>
+        <div class="page-sub">소장님이 직접 큐레이션한 한 주 핵심 뉴스</div>
+      </div>
+
+      <div class="news-list">
+        {% for news in news_items %}
+        <div class="news-item{% if news.tag_class == 'hot' %} hot{% endif %}">
+          <div class="news-tag {{ news.tag_class }}">{{ news.tag }}</div>
+          <div class="news-headline">{{ news.headline }}</div>
+          <div class="news-date">{{ news.date }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Page 4: QR + CTA -->
+    <div class="page" id="page4">
+      <div class="cta-page">
+        <div class="cta-left">
+          <div class="cta-eyebrow">매일 아침 7시 · MORNING BRIEF</div>
+          <h1 class="cta-title">정확한 부산 부동산<br><span class="accent">실거래 알림</span></h1>
+          <p class="cta-desc">우동 마린시티 인근 신규 실거래를<br>매일 아침 7시 텔레그램으로 받아보세요.</p>
+          <div class="cta-features">
+            <div class="cta-feature"><span class="check">✓</span> 신규 거래 즉시 알림 (마린시티 ⭐ 우선)</div>
+            <div class="cta-feature"><span class="check">✓</span> 직전 거래 대비 등락 자동 계산</div>
+            <div class="cta-feature"><span class="check">✓</span> 신고가 돌파 · 취소 거래 별도 표시</div>
+            <div class="cta-feature"><span class="check">✓</span> 100% 무료 · 광고 없음</div>
+          </div>
+        </div>
+        <div class="cta-right">
+          <div class="qr-frame">
+            <img class="qr-img" src="qr.png" alt="텔레그램 알림방 QR">
+          </div>
+          <div class="qr-caption">📱 텔레그램 알림방 입장</div>
+          <div class="qr-sub">QR 스캔 → 즉시 입장</div>
+          <div class="countdown-bar">
+            <div class="countdown-fill" id="countdown-fill" style="width: 100%"></div>
+          </div>
+          <div class="countdown" id="countdown-text">QR 스캔 시간: 20초</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 하단 티커 -->
+  <div class="ticker">
+    <div class="ticker-label">⭐ LIVE TICKER</div>
+    <div class="ticker-track">
+      <div class="ticker-content">
+        {{ ticker_html | safe }}
+        {{ ticker_html | safe }}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // 시계
+  function updateClock() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = `${y}.${m}.${d} · ${hh}:${mm}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // 페이지 자동 순환
+  const pageDurations = [35000, 25000, 25000, 20000];
+  const pages = document.querySelectorAll('.page');
+  const dots = document.querySelectorAll('.page-dot');
+  let currentPage = 0;
+  let countdownInterval = null;
+
+  function showPage(idx) {
+    pages.forEach((p, i) => p.classList.toggle('active', i === idx));
+    dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    if (idx === 3) {
+      const totalSec = pageDurations[3] / 1000;
+      let remaining = totalSec;
+      const fill = document.getElementById('countdown-fill');
+      const text = document.getElementById('countdown-text');
+      countdownInterval = setInterval(() => {
+        remaining -= 0.1;
+        if (remaining < 0) remaining = 0;
+        fill.style.width = (remaining / totalSec) * 100 + '%';
+        text.textContent = `QR 스캔 시간: ${Math.ceil(remaining)}초`;
+      }, 100);
+    }
+  }
+
+  function nextPage() {
+    currentPage = (currentPage + 1) % pages.length;
+    showPage(currentPage);
+    setTimeout(nextPage, pageDurations[currentPage]);
+  }
+
+  showPage(0);
+  setTimeout(nextPage, pageDurations[0]);
+</script>
+
+</body>
+</html>
