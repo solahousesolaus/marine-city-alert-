@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-주간 뉴스 후보 큐레이션 v2 (네이버 API 기반)
+주간 뉴스 후보 큐레이션 v2.1 (네이버 API + Markdown 안전 이스케이프)
 
 흐름:
 1. 네이버 뉴스 API로 키워드별 실제 기사 수집 (가짜 불가능)
 2. Claude API에 "이 중 10개 선별" 요청 (선별만, 생성 X)
-3. 텔레그램으로 발송 (실제 기사 링크 포함)
+3. 텔레그램으로 발송 (Markdown 특수문자 자동 이스케이프)
 
 환경 변수 (GitHub Secrets):
 - NAVER_CLIENT_ID
@@ -65,6 +65,29 @@ SEARCH_KEYWORDS = {
 }
 
 
+# ========== 텔레그램 안전 처리 ==========
+
+def md_escape(text):
+    """
+    텔레그램 Markdown(legacy) 모드에서 사용자 입력 텍스트를 안전하게.
+    문제 문자: * _ ` [
+    이 문자들이 짝이 안 맞으면 메시지 전체 파싱 실패.
+    가장 안전한 방법은 모두 제거하거나 비슷한 문자로 치환.
+    """
+    if not text: return ''
+    # Markdown 특수문자를 비슷한 안전 문자로 치환
+    replacements = {
+        '*': '＊',  # 전각 별표 (시각적으로 비슷, Markdown 영향 없음)
+        '_': '－',  # 전각 하이픈
+        '`': "'",   # 작은따옴표
+        '[': '〔',  # 전각 대괄호
+        ']': '〕',
+    }
+    for bad, good in replacements.items():
+        text = text.replace(bad, good)
+    return text
+
+
 def telegram_send_raw(text):
     url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage'
     data = urllib.parse.urlencode({
@@ -79,6 +102,17 @@ def telegram_send_raw(text):
             return json.loads(resp.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
         body = e.read().decode('utf-8', errors='ignore')
+        # Markdown 파싱 실패 시 plain text로 재시도
+        if e.code == 400 and 'parse' in body.lower():
+            print(f'  ⚠️ Markdown 파싱 실패 → plain text로 재시도')
+            data = urllib.parse.urlencode({
+                'chat_id': TELEGRAM_CHAT_ID,
+                'text': text,
+                'disable_web_page_preview': 'true',
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=data, method='POST')
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                return json.loads(resp.read().decode('utf-8'))
         raise RuntimeError(f'Telegram HTTP {e.code}: {body}')
 
 
@@ -103,6 +137,8 @@ def telegram_send(text):
         telegram_send_raw(chunk + suffix)
         time.sleep(0.5)
 
+
+# ========== 네이버 뉴스 API ==========
 
 def search_naver(query, display=20, sort='date'):
     params = {
@@ -183,6 +219,8 @@ def collect_news(within_days=7):
     return unique
 
 
+# ========== Claude API ==========
+
 def call_claude(prompt):
     headers = {
         'x-api-key': ANTHROPIC_API_KEY,
@@ -246,6 +284,7 @@ def build_curation_prompt(articles):
 - **반드시 위 리스트의 번호 중에서만 선택**
 - 헤드라인은 위 리스트의 제목을 **그대로 사용** 또는 60자 이내로 약간 다듬기
 - 절대 **새 헤드라인 만들거나 리스트에 없는 뉴스 추가 금지**
+- 헤드라인에서 별표(*), 밑줄(_), 백틱(`), 대괄호([]) 등 특수문자는 제거하거나 일반 문자로 변경
 
 **기사 리스트:**
 {articles_text}
@@ -259,7 +298,7 @@ def build_curation_prompt(articles):
       "n": 1,
       "tag": "tax",
       "source_index": 5,
-      "headline": "위 리스트 [5]번 제목 (60자 이내)",
+      "headline": "위 리스트 [5]번 제목 (60자 이내, 특수문자 없음)",
       "date": "MM.DD"
     }}
   ]
@@ -306,8 +345,8 @@ def format_telegram_message(data, articles, run_dt):
         n = c.get('n', '?')
         tag = c.get('tag', 'local')
         emoji = tag_emoji.get(tag, '📰')
-        headline = c.get('headline', '')
-        date = c.get('date', '')
+        headline = md_escape(c.get('headline', ''))  # ⭐ 이스케이프
+        date = md_escape(c.get('date', ''))
         source_idx = c.get('source_index', 0)
 
         source_name = ''
@@ -317,31 +356,33 @@ def format_telegram_message(data, articles, run_dt):
             try:
                 from urllib.parse import urlparse
                 domain = urlparse(link).netloc.replace('www.', '')
-                source_name = domain.split('.')[0] if domain else ''
+                source_name = md_escape(domain.split('.')[0] if domain else '')
             except:
                 source_name = ''
 
         lines.append('')
-        lines.append(f'*[{n}]* {emoji} `{tag.upper()}`')
+        lines.append(f'*[{n}]* {emoji} {tag.upper()}')
         lines.append(f'    {headline}')
         meta = []
         if date: meta.append(date)
         if source_name: meta.append(source_name)
         if meta:
-            lines.append(f'    _{" · ".join(meta)}_')
+            lines.append(f'    ({" · ".join(meta)})')
 
     lines.extend([
         '',
         '━━━━━━━━━━━━━━━━',
         '💬 *다음 단계:*',
         'Claude 채팅에 답변:',
-        '`이번 주 뉴스 X, Y, Z, W번 선택`',
-        '→ news_curated.json 새 내용 받기',
+        '"이번 주 뉴스 X, Y, Z, W번 선택"',
+        '→ news＿curated.json 새 내용 받기',
         '→ GitHub에서 commit',
     ])
 
     return '\n'.join(lines)
 
+
+# ========== 메인 ==========
 
 def main():
     missing = [k for k, v in {
@@ -356,7 +397,7 @@ def main():
         sys.exit(1)
 
     run_dt = datetime.now(ZoneInfo('Asia/Seoul'))
-    print(f'=== 주간 뉴스 큐레이션 v2 ({run_dt.isoformat()}) ===')
+    print(f'=== 주간 뉴스 큐레이션 v2.1 ({run_dt.isoformat()}) ===')
 
     print('🔍 네이버 뉴스 수집...')
     articles = collect_news(within_days=7)
@@ -382,7 +423,7 @@ def main():
     except Exception as e:
         print(f'❌ Claude API 실패: {e}')
         try:
-            telegram_send(f'⚠️ *주간 뉴스 큐레이션 실패*\n\n`{str(e)[:500]}`')
+            telegram_send(f'⚠️ 주간 뉴스 큐레이션 실패\n\n{str(e)[:500]}')
         except: pass
         sys.exit(1)
 
@@ -393,7 +434,7 @@ def main():
         data = parse_candidates(text)
     except Exception as e:
         print(f'❌ JSON 파싱 실패: {e}')
-        fallback = f'⚠️ *주간 뉴스 (자동 파싱 실패)*\n\n{text[:3500]}'
+        fallback = f'⚠️ 주간 뉴스 자동 파싱 실패\n\n{md_escape(text[:3500])}'
         telegram_send(fallback)
         sys.exit(1)
 
