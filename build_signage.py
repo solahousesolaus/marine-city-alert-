@@ -109,6 +109,15 @@ def fetch_month(yyyymm):
     return all_items
 
 
+def safe_text(text):
+    """Jinja2 템플릿에서 안전하게 표시할 수 있도록 위험 문자 제거."""
+    if not text: return ''
+    s = str(text)
+    # Jinja2 문법 충돌 방지: {{ }} {% %}
+    s = s.replace('{', '〔').replace('}', '〕')
+    return s
+
+
 def normalize(raw):
     exclu_m2 = to_float(raw.get('excluUseAr', ''))
     amount_manwon = to_int(raw.get('dealAmount', ''))
@@ -120,11 +129,11 @@ def normalize(raw):
         deal_date = f'{y:04d}-{m:02d}-{d:02d}' if y else ''
     except: deal_date = ''
     cancelled = bool((raw.get('cdealType', '') or '').strip())
-    apt_name = raw.get('aptNm', '').strip()
+    apt_name = safe_text(raw.get('aptNm', '').strip())
     return {
         'deal_date': deal_date,
         'apt_name': apt_name,
-        'apt_dong': raw.get('aptDong', '').strip(),
+        'apt_dong': safe_text(raw.get('aptDong', '').strip()),
         'umd_nm': raw.get('umdNm', '').strip(),
         'floor': to_int(raw.get('floor', '')),
         'exclu_m2': exclu_m2,
@@ -343,10 +352,10 @@ def build_signage_data(udong_active, run_dt):
             news_data = json.load(f)
         for n in news_data.get('items', [])[:4]:
             news_items.append({
-                'tag': n.get('tag', 'local').upper(),
-                'tag_class': n.get('tag', 'local'),
-                'headline': n['headline'],
-                'date': n.get('date', ''),
+                'tag': safe_text(n.get('tag', 'local').upper()),
+                'tag_class': safe_text(n.get('tag', 'local')),
+                'headline': safe_text(n.get('headline', '')),
+                'date': safe_text(n.get('date', '')),
             })
 
     return {
@@ -362,19 +371,40 @@ def build_signage_data(udong_active, run_dt):
     }
 
 
-# ========== 템플릿 렌더링 (jinja2 없이 단순 치환) ==========
+# ========== 템플릿 렌더링 ==========
 
 def render(template, data):
-    """매우 단순한 Jinja2 호환 렌더러 (외부 의존성 없음)."""
+    """Jinja2로 템플릿 렌더링. safe 필터는 기본 제공됨."""
     try:
         from jinja2 import Environment
-        env = Environment()
-        env.filters['safe'] = lambda x: x  # safe 필터 통과
-        return env.from_string(template).render(**data)
     except ImportError:
-        # jinja2가 없을 때 - 보통 GitHub Actions에서는 설치
-        print('jinja2 없음, pip install jinja2 필요')
+        print('❌ jinja2 미설치. pip install jinja2 필요')
         sys.exit(1)
+
+    # autoescape=False: HTML 템플릿이므로 자동 이스케이프 비활성화
+    # safe 필터는 jinja2 기본 제공 (markupsafe.Markup) - 덮어쓰지 않음
+    env = Environment(autoescape=False)
+    try:
+        return env.from_string(template).render(**data)
+    except Exception as e:
+        # 디버깅: 어디가 문제인지 자세히 출력
+        print(f'❌ 템플릿 렌더링 실패: {type(e).__name__}: {e}')
+        # 라인 번호가 있으면 해당 줄 보여주기
+        import re
+        m = re.search(r'line (\d+)', str(e))
+        if m:
+            line_no = int(m.group(1))
+            lines = template.split('\n')
+            print(f'\n=== 템플릿 {line_no}번째 줄 주변 ===')
+            for i in range(max(0, line_no - 3), min(len(lines), line_no + 3)):
+                marker = '>>>' if i + 1 == line_no else '   '
+                print(f'{marker} {i+1:4d}: {lines[i]}')
+        # 데이터 키들 출력
+        print('\n=== 전달된 데이터 ===')
+        for k, v in data.items():
+            preview = str(v)[:200] if not isinstance(v, list) else f'list(len={len(v)})'
+            print(f'  {k}: {preview}')
+        raise
 
 
 # ========== 메인 ==========
