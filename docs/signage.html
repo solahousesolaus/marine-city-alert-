@@ -7,7 +7,7 @@
 <!-- 5분마다 자동 새로고침 -->
 <meta http-equiv="refresh" content="300">
 <style>
-
+{% raw %}
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
     width: 100vw; height: 100vh;
@@ -256,7 +256,7 @@
     border-radius: 3px; margin: 12px auto 0; overflow: hidden;
   }
   .countdown-fill { height: 100%; background: linear-gradient(90deg, var(--gold-bright), var(--gold)); transition: width 0.1s linear; }
-
+{% endraw %}
 </style>
 </head>
 <body>
@@ -275,7 +275,7 @@
     <div class="topbar-right">
       <div><span class="live-dot"></span><span class="live">LIVE</span></div>
       <div class="clock" id="clock">--:--:--</div>
-      <div class="data-stamp">데이터 갱신: 2026.04.29 09:12 KST</div>
+      <div class="data-stamp">데이터 갱신: {{ data_updated }}</div>
     </div>
   </div>
 
@@ -294,71 +294,35 @@
     <div class="page active" id="page1">
       <div class="page-header">
         <div class="page-eyebrow">YESTERDAY · 최근 신고된 우동 거래</div>
-        <h1 class="page-title">최근 신고된 <span class="accent">우동 거래</span></h1>
-        <div class="page-sub">국토부 실거래가 기준 · 최신 신고일 2026-04-27</div>
+        <h1 class="page-title">{{ page1_title }}</h1>
+        <div class="page-sub">{{ page1_sub }}</div>
       </div>
 
-      
+      {% if recent_deals %}
       <div class="deals-grid">
-        
-        <div class="deal-card highlight">
+        {% for deal in recent_deals %}
+        <div class="deal-card{% if deal.highlight %} highlight{% endif %}">
           <div class="deal-row1">
-            <div class="deal-apt"><span class="star">⭐</span>대우마리나1</div>
-            <div class="deal-info">8F · 55평대 · 전용 49.4평</div>
+            <div class="deal-apt">{% if deal.is_marine %}<span class="star">⭐</span>{% endif %}{{ deal.apt }}</div>
+            <div class="deal-info">{{ deal.info }}</div>
           </div>
           <div class="deal-row2">
-            <div class="deal-price">15.8억</div>
-            <div class="deal-pp">평당 3,198만</div>
+            <div class="deal-price">{{ deal.price }}</div>
+            <div class="deal-pp">{{ deal.pp }}</div>
           </div>
           <div class="deal-row3">
-            <span class="change-flat">📊 동평형 첫 거래</span>
+            {{ deal.change_html | safe }}
           </div>
         </div>
-        
-        <div class="deal-card highlight">
-          <div class="deal-row1">
-            <div class="deal-apt"><span class="star">⭐</span>마린시티자이</div>
-            <div class="deal-info">45F · 34평대 · 전용 25.7평</div>
-          </div>
-          <div class="deal-row2">
-            <div class="deal-price">15억</div>
-            <div class="deal-pp">평당 5,837만</div>
-          </div>
-          <div class="deal-row3">
-            <span class="change-flat">📊 동평형 첫 거래</span>
-          </div>
-        </div>
-        
-        <div class="deal-card highlight">
-          <div class="deal-row1">
-            <div class="deal-apt"><span class="star">⭐</span>경남마리나</div>
-            <div class="deal-info">4F · 25평대 · 전용 18.1평</div>
-          </div>
-          <div class="deal-row2">
-            <div class="deal-price">7.6억</div>
-            <div class="deal-pp">평당 4,199만</div>
-          </div>
-          <div class="deal-row3">
-            직전 동평형 7.6억 → <span class="change-flat">➡️ 비슷</span>
-          </div>
-        </div>
-        
-        <div class="deal-card">
-          <div class="deal-row1">
-            <div class="deal-apt"><span class="star">⭐</span>경남마리나</div>
-            <div class="deal-info">3F · 25평대 · 전용 18.1평</div>
-          </div>
-          <div class="deal-row2">
-            <div class="deal-price">6.1억</div>
-            <div class="deal-pp">평당 3,370만</div>
-          </div>
-          <div class="deal-row3">
-            직전 동평형 7.6억 → <span class="change-down">🔻 -1.50억 (-19.7%)</span>
-          </div>
-        </div>
-        
+        {% endfor %}
       </div>
-      
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🌊</div>
+        <div class="empty-text">오늘은 신규 우동 거래가<br>아직 신고되지 않았습니다</div>
+        <div class="empty-sub">실거래 신고 기한은 계약일로부터 30일 · 매일 7시 자동 갱신</div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- Page 2: 주간 시세 -->
@@ -366,7 +330,7 @@
       <div class="page-header">
         <div class="page-eyebrow">WEEKLY · 한 주 시세 흐름</div>
         <h1 class="page-title">우동 <span class="accent">한 주간 시세</span></h1>
-        <div class="page-sub">2026.04.22 ~ 04.29 · 마린시티 인근 거래 동향</div>
+        <div class="page-sub">{{ week_range }} · 마린시티 인근 거래 동향</div>
       </div>
 
       <div class="week-grid">
@@ -377,46 +341,26 @@
               <tr><th>단지</th><th>평형</th><th>평균가</th><th>주간 변동</th></tr>
             </thead>
             <tbody>
-              
+              {% for row in week_table %}
               <tr>
-                <td class="apt">대우마리나1</td>
-                <td>55평대</td>
-                <td class="price">15.8억</td>
-                <td class="flat">신규</td>
+                <td class="apt">{{ row.apt }}</td>
+                <td>{{ row.size }}</td>
+                <td class="price">{{ row.price }}</td>
+                <td class="{{ row.change_class }}">{{ row.change }}</td>
               </tr>
-              
+              {% endfor %}
             </tbody>
           </table>
         </div>
 
         <div class="stats-card">
           <div class="card-title">📊 주간 통계</div>
-          
+          {% for stat in week_stats %}
           <div class="stat-row">
-            <div class="stat-label">우동 신규 거래</div>
-            <div class="stat-value">3<span class="small">건</span></div>
+            <div class="stat-label">{{ stat.label }}</div>
+            <div class="stat-value">{{ stat.value }}<span class="small">{{ stat.unit }}</span></div>
           </div>
-          
-          <div class="stat-row">
-            <div class="stat-label">⭐ 마린시티 거래</div>
-            <div class="stat-value">1<span class="small">건</span></div>
-          </div>
-          
-          <div class="stat-row">
-            <div class="stat-label">취소 거래</div>
-            <div class="stat-value">0<span class="small">건</span></div>
-          </div>
-          
-          <div class="stat-row">
-            <div class="stat-label">최고가</div>
-            <div class="stat-value">15.8억<span class="small"></span></div>
-          </div>
-          
-          <div class="stat-row">
-            <div class="stat-label">평균 평당가</div>
-            <div class="stat-value">2,953<span class="small">만</span></div>
-          </div>
-          
+          {% endfor %}
         </div>
       </div>
     </div>
@@ -430,31 +374,13 @@
       </div>
 
       <div class="news-list">
-        
-        <div class="news-item">
-          <div class="news-tag busan">BUSAN</div>
-          <div class="news-headline">GS건설, 부산 광안5구역 재개발 시공자 낙점</div>
-          <div class="news-date">04.26</div>
+        {% for news in news_items %}
+        <div class="news-item{% if news.tag_class == 'hot' %} hot{% endif %}">
+          <div class="news-tag {{ news.tag_class }}">{{ news.tag }}</div>
+          <div class="news-headline">{{ news.headline }}</div>
+          <div class="news-date">{{ news.date }}</div>
         </div>
-        
-        <div class="news-item">
-          <div class="news-tag tax">TAX</div>
-          <div class="news-headline">똘똘한 한 채 찾는다면 정비사업이 대안</div>
-          <div class="news-date">04.27</div>
-        </div>
-        
-        <div class="news-item">
-          <div class="news-tag market">MARKET</div>
-          <div class="news-headline">서울 집값 초양극화 심화 - 핵심지와 외곽 격차 확대</div>
-          <div class="news-date">04.27</div>
-        </div>
-        
-        <div class="news-item">
-          <div class="news-tag market">MARKET</div>
-          <div class="news-headline">서울 소형 아파트 평균 매매가격 10억 돌파</div>
-          <div class="news-date">04.28</div>
-        </div>
-        
+        {% endfor %}
       </div>
     </div>
 
@@ -474,7 +400,7 @@
         </div>
         <div class="cta-right">
           <div class="qr-frame">
-            <img class="qr-img" src="qr.png" alt="텔레그램 알림방 QR">
+            <img class="qr-img" src="qr.png?t={{ data_updated }}" alt="텔레그램 알림방 QR">
           </div>
           <div class="qr-caption">📱 텔레그램 알림방 입장</div>
           <div class="qr-sub">QR 스캔 → 즉시 입장</div>
@@ -493,8 +419,8 @@
     <div class="ticker-label">⭐ LIVE TICKER</div>
     <div class="ticker-track">
       <div class="ticker-content">
-        <span class="ticker-item"><span class="apt">⭐ 대우마리나1</span><span>55평대</span><span class="price">15.8억</span><span class="up">신규</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 마린시티자이</span><span>34평대</span><span class="price">15억</span><span class="up">신규</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 경남마리나</span><span>25평대</span><span class="price">7.6억</span><span class="up">신규</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 경남마리나</span><span>25평대</span><span class="price">6.1억</span><span class="down">🔻 -19.7%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 해운대두산위브더제니스</span><span>55평대</span><span class="price">25.5억</span><span class="down">🔻 -12.1%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">센텀센시빌</span><span>34평대</span><span class="price">5.05억</span><span class="down">🔻 -26.3%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">동부올림픽타운</span><span>34평대</span><span class="price">9.5억</span><span class="up">🔺 +4.4%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">대우동삼</span><span>34평대</span><span class="price">5.2억</span><span class="down">🔻 -12.6%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">해운대자이2차1단지</span><span>34평대</span><span class="price">10.95억</span><span class="up">🔺 +9.5%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">해운대동백두산위브더제니스</span><span>34평대</span><span class="price">9.6억</span><span class="up">🔺 +18.5%</span></span><span class="ticker-sep">◆</span>
-        <span class="ticker-item"><span class="apt">⭐ 대우마리나1</span><span>55평대</span><span class="price">15.8억</span><span class="up">신규</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 마린시티자이</span><span>34평대</span><span class="price">15억</span><span class="up">신규</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 경남마리나</span><span>25평대</span><span class="price">7.6억</span><span class="up">신규</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 경남마리나</span><span>25평대</span><span class="price">6.1억</span><span class="down">🔻 -19.7%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">⭐ 해운대두산위브더제니스</span><span>55평대</span><span class="price">25.5억</span><span class="down">🔻 -12.1%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">센텀센시빌</span><span>34평대</span><span class="price">5.05억</span><span class="down">🔻 -26.3%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">동부올림픽타운</span><span>34평대</span><span class="price">9.5억</span><span class="up">🔺 +4.4%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">대우동삼</span><span>34평대</span><span class="price">5.2억</span><span class="down">🔻 -12.6%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">해운대자이2차1단지</span><span>34평대</span><span class="price">10.95억</span><span class="up">🔺 +9.5%</span></span><span class="ticker-sep">◆</span><span class="ticker-item"><span class="apt">해운대동백두산위브더제니스</span><span>34평대</span><span class="price">9.6억</span><span class="up">🔺 +18.5%</span></span><span class="ticker-sep">◆</span>
+        {{ ticker_html | safe }}
+        {{ ticker_html | safe }}
       </div>
     </div>
   </div>
@@ -502,7 +428,7 @@
 </div>
 
 <script>
-
+{% raw %}
   // 시계
   function updateClock() {
     const now = new Date();
@@ -551,7 +477,7 @@
 
   showPage(0);
   setTimeout(nextPage, pageDurations[0]);
-
+{% endraw %}
 </script>
 
 </body>
