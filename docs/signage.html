@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>뉴제니스마린 부동산 - 디지털 사이니지</title>
-<meta name="viewport" content="width=1920, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- 5분마다 자동 새로고침 -->
 <meta http-equiv="refresh" content="300">
 <style>
@@ -35,7 +35,20 @@
     --orange: #F5A06A;
   }
 
-  .stage { width: 100vw; height: 100vh; position: relative; }
+  /* 1920x1080 기준 디자인을 모든 해상도에 자동 스케일 */
+  .scale-wrapper {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: #0A142D;
+    overflow: hidden;
+  }
+  .scale-wrapper .stage {
+    width: 1920px; height: 1080px;
+    position: relative;
+    transform-origin: center center;
+    flex-shrink: 0;
+  }
 
   /* 상단바 */
   .topbar {
@@ -261,6 +274,7 @@
 </head>
 <body>
 
+<div class="scale-wrapper">
 <div class="stage">
 
   <!-- 상단 브랜드 바 -->
@@ -275,7 +289,7 @@
     <div class="topbar-right">
       <div><span class="live-dot"></span><span class="live">LIVE</span></div>
       <div class="clock" id="clock">--:--:--</div>
-      <div class="data-stamp">데이터 갱신: 2026.04.30 07:40 KST</div>
+      <div class="data-stamp">데이터 갱신: 2026.04.30 09:26 KST</div>
     </div>
   </div>
 
@@ -481,7 +495,7 @@
         </div>
         <div class="cta-right">
           <div class="qr-frame">
-            <img class="qr-img" src="qr.png" alt="텔레그램 알림방 QR">
+            <img class="qr-img" src="qr.png?t=2026.04.30 09:26 KST" alt="텔레그램 알림방 QR">
           </div>
           <div class="qr-caption">📱 텔레그램 알림방 입장</div>
           <div class="qr-sub">QR 스캔 → 즉시 입장</div>
@@ -507,8 +521,25 @@
   </div>
 
 </div>
+</div>
 
 <script>
+
+  // 화면 크기에 맞춰 1920x1080 디자인을 자동 스케일
+  // 어떤 해상도(1680x1050, 1366x768, 4K 등)에서도 최적 표시
+  function fitStage() {
+    const stage = document.querySelector('.scale-wrapper .stage');
+    if (!stage) return;
+    const sw = window.innerWidth;
+    const sh = window.innerHeight;
+    const designW = 1920;
+    const designH = 1080;
+    // 가로/세로 중 더 작은 비율 기준으로 스케일 (잘림 없이 전체 표시)
+    const scale = Math.min(sw / designW, sh / designH);
+    stage.style.transform = `scale(${scale})`;
+  }
+  fitStage();
+  window.addEventListener('resize', fitStage);
 
   // 시계
   function updateClock() {
