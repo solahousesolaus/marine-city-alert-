@@ -135,11 +135,11 @@
   .page-title .accent { color: var(--gold-bright); }
   .page-sub { font-size: 22px; font-weight: 500; color: var(--cream); margin-top: 12px; letter-spacing: 0.5px; }
 
-  /* Page 1: 어제 거래 — 5장 카드 (3열 × 2행 그리드) */
-  .deals-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 16px; }
+  /* Page 1: 어제 거래 */
+  .deals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; margin-top: 20px; }
   .deal-card {
     background: var(--navy-card); border: 2px solid var(--gold);
-    border-radius: 16px; padding: 24px 28px;
+    border-radius: 18px; padding: 30px 36px;
     position: relative; overflow: hidden;
   }
   .deal-card.highlight {
@@ -150,17 +150,17 @@
   .deal-card.highlight::before {
     content: '🎯 신고가'; position: absolute; top: 0; right: 0;
     background: var(--red); color: var(--white);
-    padding: 6px 18px; font-size: 14px; font-weight: 900;
-    letter-spacing: 1px; border-bottom-left-radius: 14px;
+    padding: 8px 24px; font-size: 16px; font-weight: 900;
+    letter-spacing: 1px; border-bottom-left-radius: 16px;
   }
-  .deal-row1 { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
-  .deal-apt { font-size: 26px; font-weight: 800; color: var(--white); letter-spacing: -0.5px; }
-  .deal-apt .star { color: var(--gold-bright); margin-right: 6px; }
-  .deal-info { font-size: 15px; font-weight: 500; color: var(--gray); }
-  .deal-row2 { display: flex; align-items: baseline; justify-content: space-between; margin: 12px 0; }
-  .deal-price { font-size: 44px; font-weight: 900; color: var(--gold-bright); letter-spacing: -1px; line-height: 1; }
-  .deal-pp { font-size: 15px; font-weight: 600; color: var(--cream); }
-  .deal-row3 { font-size: 15px; font-weight: 500; color: var(--cream); padding-top: 10px; border-top: 1px solid rgba(212,175,55,0.2); }
+  .deal-row1 { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .deal-apt { font-size: 32px; font-weight: 800; color: var(--white); letter-spacing: -0.5px; }
+  .deal-apt .star { color: var(--gold-bright); margin-right: 8px; }
+  .deal-info { font-size: 18px; font-weight: 500; color: var(--gray); }
+  .deal-row2 { display: flex; align-items: baseline; justify-content: space-between; margin: 16px 0; }
+  .deal-price { font-size: 56px; font-weight: 900; color: var(--gold-bright); letter-spacing: -1px; line-height: 1; }
+  .deal-pp { font-size: 18px; font-weight: 600; color: var(--cream); }
+  .deal-row3 { font-size: 18px; font-weight: 500; color: var(--cream); padding-top: 12px; border-top: 1px solid rgba(212,175,55,0.2); }
   .deal-row3 .change-up { color: var(--red); font-weight: 800; }
   .deal-row3 .change-down { color: var(--green); font-weight: 800; }
   .deal-row3 .change-flat { color: var(--gold); font-weight: 600; }
@@ -213,11 +213,11 @@
   }
   .stat-value .small { font-size: 18px; color: var(--cream); font-weight: 500; margin-left: 6px; }
 
-  /* Page 3: 뉴스 */
-  .news-list { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+  /* Page 3: 뉴스 (5건 수용 가능하도록 간격·패딩 약간 축소) */
+  .news-list { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
   .news-item {
     background: var(--navy-card); border-left: 6px solid var(--gold);
-    border-radius: 12px; padding: 24px 32px;
+    border-radius: 12px; padding: 20px 30px;
     display: flex; align-items: center; gap: 30px;
   }
   .news-item.hot { border-left-color: var(--red); }
@@ -237,7 +237,7 @@
   .news-tag.local { background: rgba(212,175,55,0.25); color: var(--gold-bright); border: 1px solid var(--gold); }
   .news-tag.policy { background: var(--gold-bright); color: var(--navy-dark); }
   .news-tag.hot { background: var(--red); color: var(--white); }
-  .news-headline { flex: 1; font-size: 26px; font-weight: 700; color: var(--white); line-height: 1.4; }
+  .news-headline { flex: 1; font-size: 24px; font-weight: 700; color: var(--white); line-height: 1.4; }
   .news-date { flex-shrink: 0; font-size: 16px; color: var(--gray); font-weight: 500; }
 
   /* Page 4: QR + CTA */
