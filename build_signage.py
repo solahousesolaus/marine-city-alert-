@@ -217,11 +217,11 @@ def build_signage_data(udong_active, run_dt):
     """4개 페이지 데이터를 한꺼번에 빌드."""
     history = udong_active
 
-    # === 페이지 1: 최근 거래 (마린시티 우선, 최신 5건) ===
+    # === 페이지 1: 최근 거래 (마린시티 우선, 최신 4건) ===
     sorted_by_date = sorted(udong_active, key=lambda d: d['deal_date'], reverse=True)
-    marine_recent = [d for d in sorted_by_date if d['is_marine']][:5]
-    others_recent = [d for d in sorted_by_date if not d['is_marine']][:5]
-    page1_deals = (marine_recent + others_recent)[:5]
+    marine_recent = [d for d in sorted_by_date if d['is_marine']][:4]
+    others_recent = [d for d in sorted_by_date if not d['is_marine']][:4]
+    page1_deals = (marine_recent + others_recent)[:4]
 
     recent_deals = []
     for d in page1_deals:
@@ -345,12 +345,12 @@ def build_signage_data(udong_active, run_dt):
     if not ticker_html:
         ticker_html = '<span class="ticker-item"><span>실시간 거래 정보 갱신 중...</span></span>'
 
-    # === 뉴스 (수동 큐레이션) ===
+    # === 뉴스 (수동 큐레이션, 최대 5건) ===
     news_items = []
     if os.path.exists(NEWS_PATH):
         with open(NEWS_PATH, 'r', encoding='utf-8') as f:
             news_data = json.load(f)
-        for n in news_data.get('items', [])[:4]:
+        for n in news_data.get('items', [])[:5]:
             news_items.append({
                 'tag': safe_text(n.get('tag', 'local').upper()),
                 'tag_class': safe_text(n.get('tag', 'local')),
