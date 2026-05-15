@@ -217,11 +217,11 @@ def build_signage_data(udong_active, run_dt):
     """4개 페이지 데이터를 한꺼번에 빌드."""
     history = udong_active
 
-    # === 페이지 1: 최근 거래 (마린시티 우선, 최신 6건) ===
+    # === 페이지 1: 최근 거래 (마린시티 우선, 최신 5건) ===
     sorted_by_date = sorted(udong_active, key=lambda d: d['deal_date'], reverse=True)
-    marine_recent = [d for d in sorted_by_date if d['is_marine']][:4]
-    others_recent = [d for d in sorted_by_date if not d['is_marine']][:4]
-    page1_deals = (marine_recent + others_recent)[:4]
+    marine_recent = [d for d in sorted_by_date if d['is_marine']][:5]
+    others_recent = [d for d in sorted_by_date if not d['is_marine']][:5]
+    page1_deals = (marine_recent + others_recent)[:5]
 
     recent_deals = []
     for d in page1_deals:
